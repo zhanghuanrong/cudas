@@ -314,7 +314,7 @@ main(
     CUdevice device;
     char deviceName[256];
 
-    SetupCupti();
+    //SetupCupti();
 
     // Initialize CUDA.
     DRIVER_API_CALL(cuInit(0));
@@ -333,7 +333,7 @@ main(
     RUNTIME_API_CALL(cudaDeviceSynchronize());
     RUNTIME_API_CALL(cudaDeviceReset());
 
-    DeInitCuptiTrace();
+    //DeInitCuptiTrace();
 
     exit(EXIT_SUCCESS);
 }
