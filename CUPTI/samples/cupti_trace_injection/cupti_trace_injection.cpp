@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2022 NVIDIA Corporation. All rights reserved.
+ * Copyright 2021-2024 NVIDIA Corporation. All rights reserved.
  *
  * CUPTI based tracing injection to trace any CUDA application.
  * This sample demonstrates how to use activity
@@ -70,6 +70,10 @@ typedef struct InjectionGlobals_st
 
 InjectionGlobals injectionGlobals;
 
+CUptiResult
+DisableCuptiActivities(
+    CUcontext ctx);
+
 // Functions
 static void
 InitializeInjectionGlobals(void)
@@ -88,7 +92,8 @@ AtExitHandler(void)
     // Force flush the activity buffers.
     if (injectionGlobals.tracingEnabled)
     {
-        CUPTI_API_CALL(cuptiActivityFlushAll(1));
+        CUPTI_API_CALL(DisableCuptiActivities(NULL));
+        CUPTI_API_CALL_VERBOSE(cuptiActivityFlushAll(1));
     }
 }
 
@@ -185,9 +190,16 @@ SelectActivities()
 {
     SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_DRIVER);
     SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_RUNTIME);
+    SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_OVERHEAD);
     SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL);
     SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_MEMSET);
     SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_MEMCPY);
+    SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_MEMCPY2);
+    SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_MEMORY2);
+    // Enable activities to capture the NVTX annotations - markers, ranges and resource naming.
+    SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_NAME);
+    SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_MARKER);
+    SELECT_ACTIVITY(injectionGlobals.profileMode, CUPTI_ACTIVITY_KIND_MARKER_DATA);
 
     return CUPTI_SUCCESS;
 }
@@ -196,32 +208,35 @@ static CUptiResult
 EnableCuptiActivities(
     CUcontext context)
 {
-    CUptiResult result = CUPTI_SUCCESS;
-
-    CUPTI_API_CALL(cuptiEnableCallback(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API, CUPTI_RUNTIME_TRACE_CBID_cudaDeviceReset_v3020));
+    CUPTI_API_CALL_VERBOSE(cuptiEnableCallback(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API, CUPTI_RUNTIME_TRACE_CBID_cudaDeviceReset_v3020));
 
     CUPTI_API_CALL(SelectActivities());
 
     for (int i = 0; i < CUPTI_ACTIVITY_KIND_COUNT; ++i)
     {
+        CUptiResult result = CUPTI_SUCCESS;
+
         if (IS_ACTIVITY_SELECTED(injectionGlobals.profileMode, i))
         {
             // If context is NULL activities are being enabled after CUDA initialization.
             // Else the activities are being enabled on cudaProfilerStart API.
             if (context == NULL)
             {
+                std::cout << "Enabling CUPTI_ACTIVITY_KIND_" << GetActivityKindString((CUpti_ActivityKind)i) << ".\n";
                 CUPTI_API_CALL(cuptiActivityEnable((CUpti_ActivityKind)i));
             }
             else
             {
                 // Since some activities are not supported at context mode,
                 // enable them in global mode if context mode fails.
+                std::cout << "Enabling CUPTI_ACTIVITY_KIND_" << GetActivityKindString((CUpti_ActivityKind)i) << " for a context.\n";
                 result = cuptiActivityEnableContext(context, (CUpti_ActivityKind)i);
 
                 if (result == CUPTI_ERROR_INVALID_KIND)
                 {
                     cuptiGetLastError();
-                    result = cuptiActivityEnable((CUpti_ActivityKind)i);
+                    std::cout << "Enabling CUPTI_ACTIVITY_KIND_" << GetActivityKindString((CUpti_ActivityKind)i) << ".\n";
+                    CUPTI_API_CALL_VERBOSE(cuptiActivityEnable((CUpti_ActivityKind)i));
                 }
                 else if (result != CUPTI_SUCCESS)
                 {
@@ -231,33 +246,43 @@ EnableCuptiActivities(
         }
     }
 
-    return result;
+    return CUPTI_SUCCESS;
 }
 
-static CUptiResult
+CUptiResult
 DisableCuptiActivities(
-    CUcontext ctx)
+    CUcontext context)
 {
-    CUptiResult result = CUPTI_SUCCESS;
-
-    CUPTI_API_CALL(cuptiEnableCallback(0, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API, CUPTI_RUNTIME_TRACE_CBID_cudaDeviceReset_v3020));
+    CUPTI_API_CALL_VERBOSE(cuptiEnableCallback(0, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API, CUPTI_RUNTIME_TRACE_CBID_cudaDeviceReset_v3020));
 
     for (int i = 0; i < CUPTI_ACTIVITY_KIND_COUNT; ++i)
     {
+        CUptiResult result = CUPTI_SUCCESS;
+
         if (IS_ACTIVITY_SELECTED(injectionGlobals.profileMode, i))
         {
-            // Since some activities are not supported at context mode,
-            // disable them in global mode if context mode fails.
-            result = cuptiActivityDisableContext(ctx, (CUpti_ActivityKind)i);
-
-            if (result == CUPTI_ERROR_INVALID_KIND)
+            if (context == NULL)
             {
-                cuptiGetLastError();
+                std::cout << "Disabling CUPTI_ACTIVITY_KIND_" << GetActivityKindString((CUpti_ActivityKind)i) << ".\n";
                 CUPTI_API_CALL(cuptiActivityDisable((CUpti_ActivityKind)i));
             }
-            else if (result != CUPTI_SUCCESS)
+            else
             {
-                CUPTI_API_CALL(result);
+                // Since some activities are not supported at context mode,
+                // disable them in global mode if context mode fails.
+                std::cout << "Disabling CUPTI_ACTIVITY_KIND_" << GetActivityKindString((CUpti_ActivityKind)i) << " for a context.\n";
+                result = cuptiActivityDisableContext(context, (CUpti_ActivityKind)i);
+
+                if (result == CUPTI_ERROR_INVALID_KIND)
+                {
+                    cuptiGetLastError();
+                    std::cout << "Disabling CUPTI_ACTIVITY_KIND_" << GetActivityKindString((CUpti_ActivityKind)i) << ".\n";
+                    CUPTI_API_CALL(cuptiActivityDisable((CUpti_ActivityKind)i));
+                }
+                else if (result != CUPTI_SUCCESS)
+                {
+                    CUPTI_API_CALL(result);
+                }
             }
         }
     }
@@ -269,7 +294,7 @@ static CUptiResult
 OnCudaDeviceReset(void)
 {
     // Flush all activity buffers.
-    CUPTI_API_CALL(cuptiActivityFlushAll(0));
+    CUPTI_API_CALL_VERBOSE(cuptiActivityFlushAll(0));
 
     return CUPTI_SUCCESS;
 }
@@ -299,7 +324,7 @@ OnProfilerStop(
         return CUPTI_SUCCESS;
     }
 
-    CUPTI_API_CALL(cuptiActivityFlushAll(0));
+    CUPTI_API_CALL_VERBOSE(cuptiActivityFlushAll(0));
     CUPTI_API_CALL(DisableCuptiActivities(context));
 
     return CUPTI_SUCCESS;
@@ -387,8 +412,8 @@ SetupCupti(void)
     injectionGlobals.subscriberHandle = globals.subscriberHandle;
 
     // Subscribe Driver callback to call OnProfilerStart/OnProfilerStop function.
-    CUPTI_API_CALL(cuptiEnableCallback(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_DRIVER_API, CUPTI_DRIVER_TRACE_CBID_cuProfilerStart));
-    CUPTI_API_CALL(cuptiEnableCallback(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_DRIVER_API, CUPTI_DRIVER_TRACE_CBID_cuProfilerStop));
+    CUPTI_API_CALL_VERBOSE(cuptiEnableCallback(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_DRIVER_API, CUPTI_DRIVER_TRACE_CBID_cuProfilerStart));
+    CUPTI_API_CALL_VERBOSE(cuptiEnableCallback(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_DRIVER_API, CUPTI_DRIVER_TRACE_CBID_cuProfilerStop));
 
     // Enable CUPTI activities.
     CUPTI_API_CALL(EnableCuptiActivities(NULL));
