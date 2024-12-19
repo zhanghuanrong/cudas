@@ -6,7 +6,7 @@ ifndef OS
  HOST_ARCH := $(shell uname -m)
 endif
 
-CUDA_INSTALL_PATH ?= ../../../..
+CUDA_INSTALL_PATH ?= /usr
 NVCC := "$(CUDA_INSTALL_PATH)/bin/nvcc"
 INCLUDES := -I"$(CUDA_INSTALL_PATH)/include" -I../../include -I../common
 

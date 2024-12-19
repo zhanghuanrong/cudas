@@ -366,7 +366,7 @@ main(
     CUPTI_API_CALL(cuptiProfilerInitialize(&profilerInitializeParams));
     CUpti_Profiler_DeviceSupported_Params params = { CUpti_Profiler_DeviceSupported_Params_STRUCT_SIZE };
     params.cuDevice = deviceNum;
-    params.api = CUPTI_PROFILER_RANGE_PROFILING;
+    //params.api = CUPTI_PROFILER_RANGE_PROFILING;
     CUPTI_API_CALL(cuptiProfilerDeviceSupported(&params));
 
     if (params.isSupported != CUPTI_PROFILER_CONFIGURATION_SUPPORTED)
@@ -402,10 +402,10 @@ main(
             ::std::cerr << "\tNVIDIA Crypto Mining Processors (CMP) are not supported" << ::std::endl;
         }
 
-        if (params.wsl == CUPTI_PROFILER_CONFIGURATION_UNSUPPORTED)
-        {
-            ::std::cerr << "\tWSL is not supported" << ::std::endl;
-        }
+//        if (params.wsl == CUPTI_PROFILER_CONFIGURATION_UNSUPPORTED)
+//        {
+//            ::std::cerr << "\tWSL is not supported" << ::std::endl;
+//        }
 
         exit(EXIT_WAIVED);
     }

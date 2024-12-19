@@ -1225,17 +1225,17 @@ PrintActivity(
 
             break;
         }
-        case CUPTI_ACTIVITY_KIND_DEVICE:
-        {
-            CUpti_ActivityDevice5 *pDeviceRecord = (CUpti_ActivityDevice5 *)pRecord;
-
-            fprintf(pFileHandle, "%s %s [ %u ]\n",
-                    GetActivityKindString(pDeviceRecord->kind),
-                    GetName(pDeviceRecord->name),
-                    pDeviceRecord->id);
-
-            break;
-        }
+//        case CUPTI_ACTIVITY_KIND_DEVICE:
+//        {
+//            CUpti_ActivityDevice5 *pDeviceRecord = (CUpti_ActivityDevice5 *)pRecord;
+//
+//            fprintf(pFileHandle, "%s %s [ %u ]\n",
+//                    GetActivityKindString(pDeviceRecord->kind),
+//                    GetName(pDeviceRecord->name),
+//                    pDeviceRecord->id);
+//
+//            break;
+//        }
         case CUPTI_ACTIVITY_KIND_CONTEXT:
         {
             CUpti_ActivityContext *pContextRecord = (CUpti_ActivityContext *)pRecord;
@@ -1391,22 +1391,22 @@ PrintActivity(
 
             break;
         }
-        case CUPTI_ACTIVITY_KIND_OVERHEAD:
-        {
-            CUpti_ActivityOverhead2 *pOverheadRecord = (CUpti_ActivityOverhead2 *)pRecord;
-
-            fprintf(pFileHandle, "%s %s [ %llu, %llu ] duration %llu, %s, id %u, correlation id %lu\n",
-                    GetActivityKindString(pOverheadRecord->kind),
-                    GetActivityOverheadKindString(pOverheadRecord->overheadKind),
-                    (unsigned long long)pOverheadRecord->start,
-                    (unsigned long long)pOverheadRecord->end,
-                    (unsigned long long)(pOverheadRecord->end - pOverheadRecord->start),
-                    GetActivityObjectKindString(pOverheadRecord->objectKind),
-                    GetActivityObjectKindId(pOverheadRecord->objectKind, &pOverheadRecord->objectId),
-                    (unsigned long)pOverheadRecord->correlationId);
-
-            break;
-        }
+//        case CUPTI_ACTIVITY_KIND_OVERHEAD:
+//        {
+//            CUpti_ActivityOverhead2 *pOverheadRecord = (CUpti_ActivityOverhead2 *)pRecord;
+//
+//            fprintf(pFileHandle, "%s %s [ %llu, %llu ] duration %llu, %s, id %u, correlation id %lu\n",
+//                    GetActivityKindString(pOverheadRecord->kind),
+//                    GetActivityOverheadKindString(pOverheadRecord->overheadKind),
+//                    (unsigned long long)pOverheadRecord->start,
+//                    (unsigned long long)pOverheadRecord->end,
+//                    (unsigned long long)(pOverheadRecord->end - pOverheadRecord->start),
+//                    GetActivityObjectKindString(pOverheadRecord->objectKind),
+//                    GetActivityObjectKindId(pOverheadRecord->objectKind, &pOverheadRecord->objectId),
+//                    (unsigned long)pOverheadRecord->correlationId);
+//
+//            break;
+//        }
         case CUPTI_ACTIVITY_KIND_CDP_KERNEL:
         {
             CUpti_ActivityCdpKernel *pCdpKernelRecord = (CUpti_ActivityCdpKernel *)pRecord;
@@ -2216,23 +2216,23 @@ PrintActivity(
 
             break;
         }
-        case CUPTI_ACTIVITY_KIND_GRAPH_TRACE:
-        {
-            CUpti_ActivityGraphTrace2 *pGraphTraceRecord = (CUpti_ActivityGraphTrace2 *)pRecord;
-
-            fprintf(pFileHandle, "%s [ start %llu, end %llu ] duration %llu, correlationId %u\n deviceId %u, contextId %u, streamId %u, graphId %u\n",
-                    GetActivityKindString(pGraphTraceRecord->kind),
-                    (unsigned long long)pGraphTraceRecord->start,
-                    (unsigned long long)pGraphTraceRecord->end,
-                    (unsigned long long)(pGraphTraceRecord->end - pGraphTraceRecord->start),
-                    pGraphTraceRecord->correlationId,
-                    pGraphTraceRecord->deviceId,
-                    pGraphTraceRecord->contextId,
-                    pGraphTraceRecord->streamId,
-                    pGraphTraceRecord->graphId);
-
-            break;
-        }
+//        case CUPTI_ACTIVITY_KIND_GRAPH_TRACE:
+//        {
+//            CUpti_ActivityGraphTrace2 *pGraphTraceRecord = (CUpti_ActivityGraphTrace2 *)pRecord;
+//
+//            fprintf(pFileHandle, "%s [ start %llu, end %llu ] duration %llu, correlationId %u\n deviceId %u, contextId %u, streamId %u, graphId %u\n",
+//                    GetActivityKindString(pGraphTraceRecord->kind),
+//                    (unsigned long long)pGraphTraceRecord->start,
+//                    (unsigned long long)pGraphTraceRecord->end,
+//                    (unsigned long long)(pGraphTraceRecord->end - pGraphTraceRecord->start),
+//                    pGraphTraceRecord->correlationId,
+//                    pGraphTraceRecord->deviceId,
+//                    pGraphTraceRecord->contextId,
+//                    pGraphTraceRecord->streamId,
+//                    pGraphTraceRecord->graphId);
+//
+//            break;
+//        }
         case CUPTI_ACTIVITY_KIND_JIT:
         {
             CUpti_ActivityJit *pJitRecord = (CUpti_ActivityJit *)pRecord;
@@ -2359,22 +2359,22 @@ HandleSyncronizationCallbacks(
 void
 HandleDomainStateCallback(
     CUpti_CallbackId callbackId,
-    const CUpti_StateData *pStateData)
+    const void *pStateData)
 {
     switch (callbackId)
     {
-        case CUPTI_CBID_STATE_FATAL_ERROR:
-        {
-            const char *errorString = NULL;
-            cuptiGetResultString(pStateData->notification.result, &errorString);
-
-            fprintf(globals.pOutputFile, "\nCUPTI encountered fatal error: %s\n", errorString);
-            fprintf(globals.pOutputFile, "Error message: %s\n", pStateData->notification.message);
-
+//        case CUPTI_CBID_STATE_FATAL_ERROR:
+//        {
+//            const char *errorString = NULL;
+//            cuptiGetResultString(pStateData->notification.result, &errorString);
+//
+//            fprintf(globals.pOutputFile, "\nCUPTI encountered fatal error: %s\n", errorString);
+//            fprintf(globals.pOutputFile, "Error message: %s\n", pStateData->notification.message);
+//
             // Exiting the application if fatal error encountered in CUPTI
             // If there is a CUPTI fatal error, it means CUPTI has stopped profiling the application.
-            exit(EXIT_FAILURE);
-        }
+//            exit(EXIT_FAILURE);
+//        }
         default:
             break;
     }
@@ -2400,9 +2400,9 @@ CuptiCallbackHandler(
 
     switch (domain)
     {
-        case CUPTI_CB_DOMAIN_STATE:
-            HandleDomainStateCallback(callbackId, (CUpti_StateData *)pCallbackData);
-            break;
+//        case CUPTI_CB_DOMAIN_STATE:
+//            HandleDomainStateCallback(callbackId, (CUpti_StateData *)pCallbackData);
+//            break;
         case CUPTI_CB_DOMAIN_RUNTIME_API:
             switch (callbackId)
             {
@@ -2471,7 +2471,7 @@ InitCuptiTrace(
         CUPTI_API_CALL(cuptiEnableCallback(1, globals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API, CUPTI_RUNTIME_TRACE_CBID_cudaDeviceReset_v3020));
 
         // Enable CUPTI callback on fatal errors by default
-        CUPTI_API_CALL(cuptiEnableCallback(1, globals.subscriberHandle, CUPTI_CB_DOMAIN_STATE, CUPTI_CBID_STATE_FATAL_ERROR));
+        // CUPTI_API_CALL(cuptiEnableCallback(1, globals.subscriberHandle, CUPTI_CB_DOMAIN_STATE, CUPTI_CBID_STATE_FATAL_ERROR));
     }
 
     // Register callbacks for buffer requests and for buffers completed by CUPTI.
