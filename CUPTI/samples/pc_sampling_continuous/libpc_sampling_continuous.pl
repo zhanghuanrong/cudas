@@ -164,11 +164,12 @@ sub init {
     my $injectionLibraryPresent = 0;
     my $cuptiLibraryPresent = 0;
     my $utilLibraryPresent = 0;
-
+    my $cudaInjectionLibPath;
     if(@libPaths) {
         foreach my $path (@libPaths) {
             opendir(DIR, $path);
             if(grep(/pc_sampling_continuous/, readdir(DIR))) {
+                $cudaInjectionLibPath = $path;
                 $injectionLibraryPresent = 1;
             }
             closedir(DIR);
@@ -188,7 +189,10 @@ sub init {
     }
 
     # Set injection path
-    $ENV{CUDA_INJECTION64_PATH} = ($^O =~ /MSWin32/) ? "pc_sampling_continuous.dll" : "libpc_sampling_continuous.so";
+    if ($ENV{CUDA_INJECTION64_PATH} eq "")
+    {
+        $ENV{CUDA_INJECTION64_PATH} = $cudaInjectionLibPath.(($^O =~ /MSWin32/) ? "/pc_sampling_continuous.dll" : "/libpc_sampling_continuous.so");
+    }
 
     if ($verbose) {
         if($^O =~ /linux/) {

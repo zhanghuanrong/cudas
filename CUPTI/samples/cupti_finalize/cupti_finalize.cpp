@@ -79,7 +79,7 @@ InitializeInjectionGlobals(void)
     injectionGlobals.initialized        = 0;
     injectionGlobals.subscriberHandle   = NULL;
     injectionGlobals.detachCupti        = 0;
-    injectionGlobals.frequency          = 2; // in seconds
+    injectionGlobals.frequency          = 3; // in seconds
     injectionGlobals.tracingEnabled     = 0;
     injectionGlobals.terminateThread    = 0;
     injectionGlobals.mutexFinalize      = PTHREAD_MUTEX_INITIALIZER;
@@ -147,7 +147,9 @@ InjectionCallbackHandler(
                 if (pCallbackInfo->callbackSite == CUPTI_API_EXIT)
                 {
                     // Detach CUPTI calling cuptiFinalize() API.
-                    CUPTI_API_CALL(cuptiFinalize());
+                    printf("Calling cuptiFinalize() API.\n");
+                    CUPTI_API_CALL_VERBOSE(cuptiActivityFlushAll(1));
+                    CUPTI_API_CALL_VERBOSE(cuptiFinalize());
                     PTHREAD_CALL(pthread_cond_broadcast(&injectionGlobals.mutexCondition));
                 }
                 break;
@@ -174,13 +176,13 @@ SetupCupti(void)
     injectionGlobals.subscriberHandle = globals.subscriberHandle;
 
     // Subscribe Driver and Runtime callbacks to call cuptiFinalize in the entry/exit callback of these APIs.
-    CUPTI_API_CALL(cuptiEnableDomain(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API));
-    CUPTI_API_CALL(cuptiEnableDomain(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_DRIVER_API));
+    CUPTI_API_CALL_VERBOSE(cuptiEnableDomain(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_RUNTIME_API));
+    CUPTI_API_CALL_VERBOSE(cuptiEnableDomain(1, injectionGlobals.subscriberHandle, CUPTI_CB_DOMAIN_DRIVER_API));
 
     // Enable CUPTI activities.
-    CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_DRIVER));
-    CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_RUNTIME));
-    CUPTI_API_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
+    CUPTI_API_CALL_VERBOSE(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_DRIVER));
+    CUPTI_API_CALL_VERBOSE(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_RUNTIME));
+    CUPTI_API_CALL_VERBOSE(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL));
 }
 
 void *DynamicAttachDetach(
@@ -202,7 +204,7 @@ void *DynamicAttachDetach(
             printf("\nCUPTI detach starting ...\n");
 
             // Force flush activity buffers.
-            CUPTI_API_CALL(cuptiActivityFlushAll(1));
+            CUPTI_API_CALL_VERBOSE(cuptiActivityFlushAll(1));
             injectionGlobals.detachCupti = 1;
 
             // Lock and wait for callbackHandler() to perform CUPTI teardown.
